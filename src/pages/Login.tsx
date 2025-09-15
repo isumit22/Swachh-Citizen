@@ -123,9 +123,7 @@ window.dispatchEvent(new Event("storage")); // 🔑 Notify App.tsx that login ha
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
                   >
                     <option value="citizen">Citizen</option>
-                    <option value="worker">Waste Worker</option>
-                    <option value="admin">Admin</option>
-                    <option value="committee">Area Committee</option>
+                   
                   </select>
                 </div>
 
@@ -171,10 +169,7 @@ window.dispatchEvent(new Event("storage")); // 🔑 Notify App.tsx that login ha
   <p className="text-sm text-gray-600">
     Demo credentials:<br />
     Citizen → citizen@swachh.com / citizen123<br />
-    Citizen → Only working currently<br />
-    Worker → worker@swachh.com / worker123<br />
-    Admin → admin@swachh.com / admin123<br />
-    Committee → committee@swachh.com / committee123
+    
   </p>
 </div>
 
