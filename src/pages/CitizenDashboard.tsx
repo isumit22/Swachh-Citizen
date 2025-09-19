@@ -12,6 +12,7 @@ import {
   Target,
   Coins
 } from 'lucide-react';
+import { Camera } from 'lucide-react';
 
 const CitizenDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -32,20 +33,22 @@ const CitizenDashboard: React.FC = () => {
       color: 'from-blue-500 to-blue-600',
       action: () => navigate('/training')
     },
-    {
-      title: 'Community',
-      description: 'Join local cleanup challenges',
-      icon: Users,
-      color: 'from-purple-500 to-purple-600',
-      action: () => navigate('/community')
-    },
+    
+      
     {
       title: 'Track Vehicles',
       description: 'Monitor waste collection in real-time',
       icon: MapPin,
       color: 'from-orange-500 to-orange-600',
       action: () => navigate('/tracking')
-    }
+    },
+    {
+    title: 'Complaint',
+    description: 'Report issue with photo & location',
+    icon: Camera,
+    color: 'from-red-500 to-red-600',
+    action: () => navigate('/complaint')   // new route
+  }
   ];
 
   const achievements = [

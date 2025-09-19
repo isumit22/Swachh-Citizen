@@ -1,107 +1,107 @@
 import React, { useState, useRef } from 'react';
-import { Camera, Upload, Scan, CheckCircle, AlertTriangle, Info } from 'lucide-react';
+import { Camera, Upload, Scan, CheckCircle, Info } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { useNotifications } from '../context/NotificationContext';
 
+interface ScanResult {
+  name: string;
+  category: string;
+  bin: string;
+  tips: string;
+  coins: number;
+  icon: string;
+  severity: string;
+  confidence?: number;
+  timestamp: Date;
+  id: number;
+}
+
 const WasteScanner: React.FC = () => {
-  const [scannedItem, setScannedItem] = useState<any>(null);
+  const [scannedItem, setScannedItem] = useState<ScanResult | null>(null);
   const [isScanning, setIsScanning] = useState(false);
-  const [scanHistory, setScanHistory] = useState<any[]>([]);
+  const [scanHistory, setScanHistory] = useState<ScanResult[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { updateGreenCoins } = useUser();
   const { addNotification } = useNotifications();
 
-  // Mock waste database
-  const wasteDatabase = [
-    {
-      name: 'Plastic Bottle',
-      category: 'Recyclable',
-      bin: 'Blue Bin',
-      tips: 'Remove cap and labels before disposal',
-      coins: 5,
-      icon: '🍾',
-      severity: 'low'
-    },
-    {
-      name: 'Aluminum Can',
-      category: 'Recyclable',
-      bin: 'Blue Bin', 
-      tips: 'Clean the can before disposal',
-      coins: 3,
-      icon: '🥤',
-      severity: 'low'
-    },
-    {
-      name: 'Food Waste',
-      category: 'Organic',
-      bin: 'Green Bin',
-      tips: 'Compost or dispose in organic waste bin',
-      coins: 2,
-      icon: '🍎',
-      severity: 'medium'
-    },
-    {
-      name: 'Electronic Device',
-      category: 'E-Waste',
-      bin: 'Special Collection',
-      tips: 'Take to designated e-waste collection center',
-      coins: 10,
-      icon: '📱',
-      severity: 'high'
-    },
-    {
-      name: 'Glass Bottle',
-      category: 'Recyclable',
-      bin: 'Blue Bin',
-      tips: 'Clean thoroughly before disposal',
-      coins: 4,
-      icon: '🍾',
-      severity: 'low'
-    }
-  ];
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      simulateScan();
-    }
+  // icon helper
+  const getIcon = (wasteType: string) => {
+    if (wasteType.toLowerCase().includes("plastic")) return "🧴";
+    if (wasteType.toLowerCase().includes("metal")) return "🥤";
+    if (wasteType.toLowerCase().includes("glass")) return "🍾";
+    if (wasteType.toLowerCase().includes("paper")) return "📄";
+    if (wasteType.toLowerCase().includes("battery")) return "🔋";
+    if (wasteType.toLowerCase().includes("food")) return "🍎";
+    return "♻️";
   };
 
-  const simulateScan = () => {
+  // when user uploads/takes photo
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
     setIsScanning(true);
-    
-    setTimeout(() => {
-      // Randomly select an item from database
-      const randomItem = wasteDatabase[Math.floor(Math.random() * wasteDatabase.length)];
-      const scanResult = {
-        ...randomItem,
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("http://127.0.0.1:5000/predict", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Prediction failed");
+      const data = await res.json();
+
+      // build scan result from backend
+      const scanResult: ScanResult = {
+        name: data.waste_type,
+        category: data.category,
+        bin: data.bin,
+        tips: data.tip,
+        coins: data.recyclable ? 5 : 2,
+        icon: getIcon(data.waste_type),
+        severity: data.recyclable ? "low" : "high",
+        confidence: data.confidence,
         timestamp: new Date(),
-        id: Date.now()
+        id: Date.now(),
       };
-      
+
       setScannedItem(scanResult);
-      setScanHistory(prev => [scanResult, ...prev.slice(0, 9)]);
-      updateGreenCoins(randomItem.coins);
-      addNotification(`Earned ${randomItem.coins} Green Coins!`, 'success');
+      setScanHistory((prev) => [scanResult, ...prev.slice(0, 9)]);
+      updateGreenCoins(scanResult.coins);
+      addNotification(`Earned ${scanResult.coins} Green Coins!`, "success");
+    } catch (error) {
+      console.error("Error scanning:", error);
+      alert("Scan failed. Try again.");
+    } finally {
       setIsScanning(false);
-    }, 2000);
+    }
   };
 
   const getBinColor = (bin: string) => {
     switch (bin) {
-      case 'Blue Bin': return 'text-blue-600 bg-blue-100';
-      case 'Green Bin': return 'text-green-600 bg-green-100';
-      case 'Special Collection': return 'text-purple-600 bg-purple-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case "Blue Bin":
+        return "text-blue-600 bg-blue-100";
+      case "Green Bin":
+        return "text-green-600 bg-green-100";
+      case "Special Collection":
+        return "text-purple-600 bg-purple-100";
+      default:
+        return "text-gray-600 bg-gray-100";
     }
   };
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'high': return 'text-red-600';
-      case 'medium': return 'text-yellow-600';
-      case 'low': return 'text-green-600';
-      default: return 'text-gray-600';
+      case "high":
+        return "text-red-600";
+      case "medium":
+        return "text-yellow-600";
+      case "low":
+        return "text-green-600";
+      default:
+        return "text-gray-600";
     }
   };
 
@@ -114,7 +114,9 @@ const WasteScanner: React.FC = () => {
             <Scan className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">AI Waste Scanner</h1>
-          <p className="text-gray-600">Scan items to learn proper disposal methods and earn Green Coins</p>
+          <p className="text-gray-600">
+            Scan items to learn proper disposal methods and earn Green Coins
+          </p>
         </div>
 
         {/* Scanning Interface */}
@@ -145,7 +147,7 @@ const WasteScanner: React.FC = () => {
                     <span className="font-medium text-gray-700">Upload Image</span>
                   </button>
                 </div>
-                
+
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -172,15 +174,21 @@ const WasteScanner: React.FC = () => {
                   <h2 className="text-2xl font-bold text-gray-800">{scannedItem.name}</h2>
                   <CheckCircle className="w-6 h-6 text-green-500" />
                 </div>
-                
+
                 <div className="flex flex-wrap items-center gap-3 mb-4">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getBinColor(scannedItem.bin)}`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${getBinColor(
+                      scannedItem.bin
+                    )}`}
+                  >
                     {scannedItem.bin}
                   </span>
                   <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
                     {scannedItem.category}
                   </span>
-                  <span className={`text-sm font-medium ${getSeverityColor(scannedItem.severity)}`}>
+                  <span
+                    className={`text-sm font-medium ${getSeverityColor(scannedItem.severity)}`}
+                  >
                     Priority: {scannedItem.severity.toUpperCase()}
                   </span>
                 </div>
@@ -198,7 +206,9 @@ const WasteScanner: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <span className="text-2xl">🪙</span>
-                    <span className="font-bold text-green-600">+{scannedItem.coins} Green Coins</span>
+                    <span className="font-bold text-green-600">
+                      +{scannedItem.coins} Green Coins
+                    </span>
                   </div>
                   <span className="text-sm text-gray-500">
                     Scanned {scannedItem.timestamp.toLocaleTimeString()}
@@ -215,7 +225,10 @@ const WasteScanner: React.FC = () => {
             <h2 className="text-xl font-bold text-gray-800 mb-6">Recent Scans</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {scanHistory.map((item) => (
-                <div key={item.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div
+                  key={item.id}
+                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
                   <div className="flex items-center space-x-3 mb-2">
                     <span className="text-2xl">{item.icon}</span>
                     <div>

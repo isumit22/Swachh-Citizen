@@ -9,6 +9,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import WasteScanner from './pages/WasteScanner';
 import TrainingModule from './pages/TrainingModule';
 import CommunityPage from './pages/CommunityPage';
+import ComlaintPage from './pages/ComplaintPage';
 import MapTracking from './pages/MapTracking';
 import FacilityLocator from './pages/FacilityLocator';
 import ProfilePage from './pages/ProfilePage';  // ✅ NEW PAGE
@@ -84,7 +85,7 @@ function App() {
               <Route path="/community" element={isAuthenticated ? <CommunityPage /> : <Navigate to="/login" />} />
               <Route path="/tracking" element={isAuthenticated ? <MapTracking /> : <Navigate to="/login" />} />
               <Route path="/facilities" element={isAuthenticated ? <FacilityLocator /> : <Navigate to="/login" />} />
-
+              <Route path="/complaint" element={isAuthenticated ? <ComlaintPage /> : <Navigate to="/login" />} />
               {/* ✅ New Profile Page */}
               <Route path="/profile" element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />} />
               {/* Rewards Page */}
