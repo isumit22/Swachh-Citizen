@@ -1,12 +1,25 @@
-import React, { useState, useRef } from 'react';
-import { Camera, Upload, Scan, CheckCircle, Info } from 'lucide-react';
-import { useUser } from '../context/UserContext';
-import { useNotifications } from '../context/NotificationContext';
+import React, { useState, useRef } from "react";
+import {
+  Camera,
+  Upload,
+  Scan,
+  CheckCircle,
+  Info,
+  Recycle,
+  Leaf,
+  AlertTriangle,
+} from "lucide-react";
+import { useUser } from "../context/UserContext";
+import { useNotifications } from "../context/NotificationContext";
 
 interface ScanResult {
   name: string;
   category: string;
-  bin: string;
+  bin: {
+    name: string;
+    color: string;
+    icon: string;
+  };
   tips: string;
   coins: number;
   icon: string;
@@ -24,7 +37,7 @@ const WasteScanner: React.FC = () => {
   const { updateGreenCoins } = useUser();
   const { addNotification } = useNotifications();
 
-  // icon helper
+  // 🔹 Icon helper for waste type (emoji)
   const getIcon = (wasteType: string) => {
     if (wasteType.toLowerCase().includes("plastic")) return "🧴";
     if (wasteType.toLowerCase().includes("metal")) return "🥤";
@@ -35,8 +48,17 @@ const WasteScanner: React.FC = () => {
     return "♻️";
   };
 
-  // when user uploads/takes photo
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // 🔹 Icon map for bin
+  const binIcons: Record<string, JSX.Element> = {
+    recycle: <Recycle className="w-5 h-5" />,
+    leaf: <Leaf className="w-5 h-5" />,
+    "alert-triangle": <AlertTriangle className="w-5 h-5" />,
+  };
+
+  // 📸 File upload / capture
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -53,7 +75,6 @@ const WasteScanner: React.FC = () => {
       if (!res.ok) throw new Error("Prediction failed");
       const data = await res.json();
 
-      // build scan result from backend
       const scanResult: ScanResult = {
         name: data.waste_type,
         category: data.category,
@@ -79,14 +100,14 @@ const WasteScanner: React.FC = () => {
     }
   };
 
-  const getBinColor = (bin: string) => {
-    switch (bin) {
+  const getBinColor = (binName: string) => {
+    switch (binName) {
       case "Blue Bin":
         return "text-blue-600 bg-blue-100";
       case "Green Bin":
         return "text-green-600 bg-green-100";
-      case "Special Collection":
-        return "text-purple-600 bg-purple-100";
+      case "No Bin":
+        return "text-red-600 bg-red-100";
       default:
         return "text-gray-600 bg-gray-100";
     }
@@ -113,20 +134,26 @@ const WasteScanner: React.FC = () => {
           <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <Scan className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">AI Waste Scanner</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            AI Waste Scanner
+          </h1>
           <p className="text-gray-600">
             Scan items to learn proper disposal methods and earn Green Coins
           </p>
         </div>
 
-        {/* Scanning Interface */}
+        {/* Scanner */}
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
           <div className="text-center">
             {isScanning ? (
               <div className="py-16">
                 <div className="animate-spin w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-lg font-medium text-gray-700">Analyzing item...</p>
-                <p className="text-sm text-gray-500">AI is identifying waste type and disposal method</p>
+                <p className="text-lg font-medium text-gray-700">
+                  Analyzing item...
+                </p>
+                <p className="text-sm text-gray-500">
+                  AI is identifying waste type and disposal method
+                </p>
               </div>
             ) : (
               <div className="py-8">
@@ -136,15 +163,21 @@ const WasteScanner: React.FC = () => {
                     className="flex flex-col items-center space-y-3 p-6 border-2 border-dashed border-green-300 rounded-xl hover:border-green-400 hover:bg-green-50 transition-colors"
                   >
                     <Camera className="w-8 h-8 text-green-500" />
-                    <span className="font-medium text-gray-700">Take Photo</span>
+                    <span className="font-medium text-gray-700">
+                      Take Photo
+                    </span>
                   </button>
 
                   <button
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() =>
+                      document.getElementById("uploadInput")?.click()
+                    }
                     className="flex flex-col items-center space-y-3 p-6 border-2 border-dashed border-blue-300 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-colors"
                   >
                     <Upload className="w-8 h-8 text-blue-500" />
-                    <span className="font-medium text-gray-700">Upload Image</span>
+                    <span className="font-medium text-gray-700">
+                      Upload Image
+                    </span>
                   </button>
                 </div>
 
@@ -152,42 +185,58 @@ const WasteScanner: React.FC = () => {
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
+                  capture="environment"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <input
+                  id="uploadInput"
+                  type="file"
+                  accept="image/*"
                   onChange={handleFileUpload}
                   className="hidden"
                 />
 
                 <p className="text-sm text-gray-500 mt-4">
-                  Supports JPG, PNG formats. AI powered by advanced image recognition.
+                  Supports JPG, PNG formats. AI powered by advanced image
+                  recognition.
                 </p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Scan Result */}
+        {/* Result */}
         {scannedItem && (
           <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
             <div className="flex items-start space-x-4">
               <div className="text-6xl">{scannedItem.icon}</div>
               <div className="flex-1">
                 <div className="flex items-center space-x-2 mb-2">
-                  <h2 className="text-2xl font-bold text-gray-800">{scannedItem.name}</h2>
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    {scannedItem.name}
+                  </h2>
                   <CheckCircle className="w-6 h-6 text-green-500" />
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 mb-4">
+                  {/* Bin info */}
                   <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${getBinColor(
-                      scannedItem.bin
+                    className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2 ${getBinColor(
+                      scannedItem.bin.name
                     )}`}
                   >
-                    {scannedItem.bin}
+                    {binIcons[scannedItem.bin.icon]}
+                    {scannedItem.bin.name}
                   </span>
+
                   <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
                     {scannedItem.category}
                   </span>
                   <span
-                    className={`text-sm font-medium ${getSeverityColor(scannedItem.severity)}`}
+                    className={`text-sm font-medium ${getSeverityColor(
+                      scannedItem.severity
+                    )}`}
                   >
                     Priority: {scannedItem.severity.toUpperCase()}
                   </span>
@@ -197,7 +246,9 @@ const WasteScanner: React.FC = () => {
                   <div className="flex items-start space-x-2">
                     <Info className="w-5 h-5 text-blue-500 mt-0.5" />
                     <div>
-                      <h3 className="font-medium text-blue-800 mb-1">Disposal Instructions</h3>
+                      <h3 className="font-medium text-blue-800 mb-1">
+                        Disposal Instructions
+                      </h3>
                       <p className="text-blue-700">{scannedItem.tips}</p>
                     </div>
                   </div>
@@ -219,10 +270,12 @@ const WasteScanner: React.FC = () => {
           </div>
         )}
 
-        {/* Scan History */}
+        {/* History */}
         {scanHistory.length > 0 && (
           <div className="bg-white rounded-2xl shadow-lg p-8">
-            <h2 className="text-xl font-bold text-gray-800 mb-6">Recent Scans</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-6">
+              Recent Scans
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {scanHistory.map((item) => (
                 <div
@@ -233,13 +286,20 @@ const WasteScanner: React.FC = () => {
                     <span className="text-2xl">{item.icon}</span>
                     <div>
                       <h3 className="font-medium text-gray-800">{item.name}</h3>
-                      <span className={`text-xs px-2 py-1 rounded-full ${getBinColor(item.bin)}`}>
-                        {item.bin}
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${getBinColor(
+                          item.bin.name
+                        )}`}
+                      >
+                        {binIcons[item.bin.icon]}
+                        {item.bin.name}
                       </span>
                     </div>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-green-600 font-medium">+{item.coins} coins</span>
+                    <span className="text-green-600 font-medium">
+                      +{item.coins} coins
+                    </span>
                     <span className="text-gray-500">
                       {item.timestamp.toLocaleDateString()}
                     </span>
