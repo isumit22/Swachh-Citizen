@@ -1,6 +1,6 @@
 # ♻️ Swachh – Smart Waste Management System  
 
-Swachh is an AI + Blockchain powered waste management solution designed to make cities cleaner and smarter. It integrates waste classification, real-time vehicle tracking, complaint management, and reward-based recycling.  
+Swachh is an AI + Blockchain powered waste management solution designed to make cities cleaner and smarter. It integrates waste classification, real-time vehicle tracking, complaint management, and reward-based recycling 
 
 ---
 
